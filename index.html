@@ -1,0 +1,2387 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARQUIVO // 7 CONTOS</title>
+  <meta name="theme-color" content="#050508" />
+
+  <style>
+    :root{
+      --bg:#050508;
+      --bg2:#070711;
+      --ink:#d7d7e6;
+      --muted:#9aa0b3;
+      --toxic:#c7ff3a;
+      --blood:#ff2d55;
+      --cold:#7ad7ff;
+      --amber:#ffcc66;
+
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.12);
+      --stroke2: rgba(255,255,255,.18);
+      --shadow: 0 24px 80px rgba(0,0,0,.72);
+
+      --radius: 18px;
+      --radius2: 24px;
+
+      --font: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --serif: ui-serif, Georgia, "Times New Roman", serif;
+
+      --scanOpacity: .16;
+      --grainOpacity: .20;
+
+      --sanity: 100; /* 0..100 */
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      background:
+        radial-gradient(1000px 600px at 15% 10%, rgba(122,215,255,.10), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(255,45,85,.09), transparent 60%),
+        radial-gradient(800px 700px at 50% 95%, rgba(199,255,58,.06), transparent 55%),
+        linear-gradient(180deg, var(--bg2), var(--bg));
+      color: var(--ink);
+      font-family: var(--font);
+      overflow-x:hidden;
+    }
+
+    /* ====== BACKGROUND FX LAYERS ====== */
+    .scanlines, .grain, .vignette, .noise2{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+    }
+    .scanlines{
+      opacity: var(--scanOpacity);
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.05) 0px,
+        rgba(255,255,255,.05) 1px,
+        rgba(0,0,0,.00) 3px,
+        rgba(0,0,0,.00) 6px
+      );
+      mix-blend-mode: overlay;
+      animation: scanMove 9s linear infinite;
+    }
+    @keyframes scanMove{
+      from{ transform: translateY(0); }
+      to{ transform: translateY(36px); }
+    }
+
+    .grain{
+      opacity: var(--grainOpacity);
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      animation: grainShift 2.2s steps(2) infinite;
+    }
+    @keyframes grainShift{
+      0%{ transform: translate(0,0); }
+      25%{ transform: translate(-2%, 1%); }
+      50%{ transform: translate(1%, -2%); }
+      75%{ transform: translate(2%, 2%); }
+      100%{ transform: translate(0,0); }
+    }
+
+    .noise2{
+      opacity:.10;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.06), transparent 55%),
+        radial-gradient(circle at 70% 60%, rgba(255,255,255,.04), transparent 60%);
+      mix-blend-mode: overlay;
+      filter: blur(10px);
+    }
+
+    .vignette{
+      background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,.72) 100%);
+      mix-blend-mode: multiply;
+      opacity:.85;
+    }
+
+    /* ====== LAYOUT ====== */
+    .app{
+      position:relative;
+      z-index:1;
+      min-height:100%;
+      display:flex;
+      justify-content:center;
+    }
+    .wrap{
+      width: min(1100px, 100%);
+      padding: 22px 16px 110px;
+    }
+
+    .topbar{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:space-between;
+      margin-bottom: 14px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-width: 70ch;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.8px;
+      color: rgba(255,255,255,.90);
+      text-transform: uppercase;
+    }
+    .brand p{
+      margin:0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .badgeRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.28);
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      font-size: 12px;
+      color: rgba(255,255,255,.86);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background: var(--toxic);
+      box-shadow: 0 0 18px rgba(199,255,58,.75);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%,100%{ transform: scale(1); opacity:.9; }
+      50%{ transform: scale(1.55); opacity:.55; }
+    }
+    .pill .warn{ color: var(--amber); }
+    .pill button{
+      all:unset;
+      cursor:pointer;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+    }
+    .pill button:hover{ border-color: rgba(199,255,58,.45); }
+
+    /* ====== SHELL ====== */
+    .shell{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+      align-items:stretch;
+    }
+    @media (max-width: 980px){
+      .shell{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    /* ====== LEFT: INDEX ====== */
+    .indexHead{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .indexHead .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .indexHead .title strong{
+      font-size: 13px;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.90);
+    }
+    .indexHead .title span{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .searchRow{
+      padding: 12px 14px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .searchRow input{
+      width:100%;
+      padding: 11px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: rgba(255,255,255,.92);
+      outline:none;
+      font-family: var(--font);
+      font-size: 12px;
+    }
+    .searchRow input:focus{
+      border-color: rgba(199,255,58,.45);
+      box-shadow: 0 0 0 3px rgba(199,255,58,.10);
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+    }
+    .item{
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      cursor:pointer;
+      display:flex;
+      gap: 12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease;
+      position:relative;
+      user-select:none;
+    }
+    .item:hover{
+      background: rgba(255,255,255,.04);
+    }
+    .item.active{
+      background: rgba(199,255,58,.08);
+      border-top-color: rgba(199,255,58,.20);
+    }
+
+    .item .meta{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      max-width: 90%;
+    }
+    .item .meta .code{
+      font-size: 11px;
+      color: rgba(255,255,255,.74);
+      letter-spacing:.5px;
+    }
+    .item .meta .name{
+      font-size: 13px;
+      color: rgba(255,255,255,.92);
+      letter-spacing:.2px;
+    }
+    .item .meta .tag{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .item .chev{
+      color: rgba(255,255,255,.55);
+      font-size: 12px;
+      padding-top: 3px;
+    }
+
+    .indexFoot{
+      padding: 12px 14px 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+      background: rgba(0,0,0,.18);
+    }
+
+    /* ====== RIGHT: VIEW ====== */
+    .viewHead{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .viewHead .left{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-width: 70ch;
+    }
+    .viewHead .left .headline{
+      font-size: 13px;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.92);
+    }
+    .viewHead .left .sub{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.25);
+      color: rgba(255,255,255,.90);
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-family: var(--font);
+      font-size: 12px;
+      user-select:none;
+      transition: transform .14s ease, border-color .14s ease, background .14s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(199,255,58,.45);
+      background: rgba(199,255,58,.08);
+    }
+    .btn.danger:hover{
+      border-color: rgba(255,45,85,.55);
+      background: rgba(255,45,85,.10);
+    }
+
+    .viewBody{
+      padding: 16px 16px 20px;
+      position:relative;
+    }
+
+    .storyCard{
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      border-radius: 18px;
+      overflow:hidden;
+      position:relative;
+      box-shadow: 0 30px 80px rgba(0,0,0,.50);
+    }
+
+    .storyTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background:
+        radial-gradient(700px 240px at 10% 10%, rgba(255,45,85,.10), transparent 55%),
+        radial-gradient(700px 240px at 90% 20%, rgba(122,215,255,.08), transparent 58%),
+        rgba(0,0,0,.22);
+    }
+
+    .storyTop .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .storyTop .title h2{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+      font-family: var(--serif);
+      color: rgba(255,255,255,.93);
+    }
+    .storyTop .title .metaLine{
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .meter{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      min-width: 170px;
+    }
+    .meter label{
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .bar{
+      width: 170px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+      position:relative;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width: calc(var(--sanity) * 1%);
+      background:
+        linear-gradient(90deg, rgba(199,255,58,.85), rgba(255,204,102,.85), rgba(255,45,85,.85));
+      filter: saturate(1.1);
+      transition: width .35s ease;
+    }
+
+    .storyText{
+      padding: 14px 14px 18px;
+      line-height: 1.85;
+      font-size: 14px;
+      color: rgba(255,255,255,.92);
+      white-space: pre-line;
+      font-family: var(--serif);
+      letter-spacing:.1px;
+      min-height: 360px;
+    }
+
+    .storyText .cursor{
+      display:inline-block;
+      width: 10px;
+      height: 16px;
+      background: rgba(199,255,58,.75);
+      margin-left: 6px;
+      transform: translateY(2px);
+      animation: blink 1.1s steps(2) infinite;
+    }
+    @keyframes blink{
+      0%,49%{ opacity:1; }
+      50%,100%{ opacity:0; }
+    }
+
+    .storyFoot{
+      border-top: 1px solid rgba(255,255,255,.10);
+      padding: 12px 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .storyFoot .k{
+      color: rgba(255,255,255,.72);
+    }
+
+    /* ====== GLITCH / FLICKER ====== */
+    .glitch{
+      position: relative;
+      display:inline-block;
+    }
+    .glitch::before, .glitch::after{
+      content: attr(data-text);
+      position:absolute;
+      left:0;
+      top:0;
+      width:100%;
+      overflow:hidden;
+      clip-path: inset(0 0 0 0);
+      opacity:.70;
+      pointer-events:none;
+    }
+    .glitch::before{
+      transform: translate(1px, 0);
+      color: rgba(122,215,255,.85);
+      mix-blend-mode: screen;
+      animation: g1 3.6s infinite;
+    }
+    .glitch::after{
+      transform: translate(-1px, 0);
+      color: rgba(255,45,85,.85);
+      mix-blend-mode: screen;
+      animation: g2 2.8s infinite;
+    }
+    @keyframes g1{
+      0%,100%{ clip-path: inset(0 0 0 0); }
+      10%{ clip-path: inset(10% 0 75% 0); }
+      12%{ clip-path: inset(0 0 0 0); }
+      68%{ clip-path: inset(45% 0 25% 0); }
+      70%{ clip-path: inset(0 0 0 0); }
+    }
+    @keyframes g2{
+      0%,100%{ clip-path: inset(0 0 0 0); }
+      18%{ clip-path: inset(58% 0 20% 0); }
+      20%{ clip-path: inset(0 0 0 0); }
+      78%{ clip-path: inset(20% 0 62% 0); }
+      80%{ clip-path: inset(0 0 0 0); }
+    }
+
+    .flicker{
+      animation: flicker 7s infinite;
+    }
+    @keyframes flicker{
+      0%, 100% { opacity: 1; }
+      31% { opacity: .92; }
+      32% { opacity: .65; }
+      33% { opacity: .98; }
+      69% { opacity: .90; }
+      70% { opacity: .55; }
+      71% { opacity: 1; }
+    }
+
+    /* ====== “WHISPERS” POPUP ====== */
+    .whisper{
+      position:fixed;
+      left: 50%;
+      top: 18%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      pointer-events:none;
+      opacity:0;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.45);
+      box-shadow: 0 30px 80px rgba(0,0,0,.60);
+      font-family: var(--font);
+      font-size: 12px;
+      color: rgba(255,255,255,.85);
+      text-shadow: 0 0 20px rgba(199,255,58,.12);
+      max-width: min(520px, 92vw);
+      text-align:center;
+      line-height: 1.45;
+      backdrop-filter: blur(10px);
+    }
+    .whisper.show{
+      animation: whisperIn 2.7s ease forwards;
+    }
+    @keyframes whisperIn{
+      0%{ opacity:0; transform: translate(-50%, -50%) scale(.98); }
+      15%{ opacity:.95; transform: translate(-50%, -50%) scale(1); }
+      85%{ opacity:.85; }
+      100%{ opacity:0; transform: translate(-50%, -60%) scale(.98); }
+    }
+
+    /* ====== SANITY DISTORTION ====== */
+    .distort{
+      filter:
+        saturate(calc(1 + (100 - var(--sanity)) / 220))
+        contrast(calc(1 + (100 - var(--sanity)) / 260))
+        hue-rotate(calc((100 - var(--sanity)) * 0.2deg));
+    }
+
+    /* ====== FOOTER ====== */
+    .bottomNote{
+      margin-top: 14px;
+      color: rgba(255,255,255,.55);
+      font-size: 11px;
+      line-height: 1.5;
+      text-align:center;
+    }
+
+    /* ====== MODAL ====== */
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index: 60;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      background: rgba(0,0,0,.66);
+      backdrop-filter: blur(6px);
+    }
+    .modal.open{ display:flex; }
+    .modalCard{
+      width: min(760px, 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.40);
+      box-shadow: 0 40px 120px rgba(0,0,0,.70);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      background: rgba(0,0,0,.25);
+    }
+    .modalHead strong{
+      font-size: 12px;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.86);
+    }
+    .modalBody{
+      padding: 14px;
+      color: rgba(255,255,255,.82);
+      font-size: 13px;
+      line-height: 1.75;
+      font-family: var(--serif);
+      white-space: pre-line;
+    }
+    .x{
+      cursor:pointer;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      font-size: 12px;
+      user-select:none;
+    }
+    .x:hover{ border-color: rgba(255,45,85,.45); background: rgba(255,45,85,.10); }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .scanlines, .grain{ animation: none !important; }
+      .glitch::before, .glitch::after{ animation: none !important; }
+      .flicker{ animation: none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="scanlines"></div>
+  <div class="grain"></div>
+  <div class="noise2"></div>
+  <div class="vignette"></div>
+
+  <div class="whisper" id="whisper"></div>
+
+  <div class="app distort" id="app">
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <h1 class="flicker"><span class="glitch" data-text="ARQUIVO RESTRITO">ARQUIVO RESTRITO</span> // 7 CONTOS</h1>
+          <p>
+            Isto é ficção. Conteúdo de terror psicológico/ocultismo/paranoia. <span style="color:var(--amber)">Sem gore explícito</span>, mas pesado no clima.
+            O site salva progresso no seu navegador (local).
+          </p>
+        </div>
+
+        <div class="badgeRow">
+          <div class="pill"><span class="dot"></span> <span>STATUS: <span class="warn">OBSERVADO</span></span></div>
+          <div class="pill">
+            <span>ÁUDIO AMBIENTE</span>
+            <button id="audioBtn" title="Liga/desliga (gera som no navegador)">OFF</button>
+          </div>
+          <div class="pill">
+            <span>SANIDADE</span>
+            <span id="sanityText">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="shell">
+        <!-- LEFT: INDEX -->
+        <section class="panel" aria-label="Lista de contos">
+          <div class="indexHead">
+            <div class="title">
+              <strong>Índice</strong>
+              <span>Escolha um arquivo. Leia. Volte… se conseguir.</span>
+            </div>
+            <div class="pill" style="padding:8px 10px; font-size:11px;">
+              <span class="k">AUTO-SAVE:</span> ON
+            </div>
+          </div>
+
+          <div class="searchRow">
+            <input id="search" type="text" placeholder="filtrar por título, tag, código..." autocomplete="off" />
+          </div>
+
+          <div class="list" id="list"></div>
+
+          <div class="indexFoot">
+            Dica: depois de ler um conto inteiro, o site “aprende” você (efeitos aumentam).<br>
+            Pressione <span class="k">ESC</span> para abrir o “Protocolo” a qualquer momento.
+          </div>
+        </section>
+
+        <!-- RIGHT: VIEW -->
+        <section class="panel" aria-label="Leitor">
+          <div class="viewHead">
+            <div class="left">
+              <div class="headline" id="viewCode">SELECIONE UM ARQUIVO</div>
+              <div class="sub" id="viewSub">Você não precisa abrir todos. Mas vai querer.</div>
+            </div>
+            <div class="controls">
+              <button class="btn" id="btnProtocol">Protocolo</button>
+              <button class="btn" id="btnInstant">Mostrar tudo</button>
+              <button class="btn danger" id="btnReset">Resetar progresso</button>
+            </div>
+          </div>
+
+          <div class="viewBody">
+            <div class="storyCard" id="storyCard" style="display:none;">
+              <div class="storyTop">
+                <div class="title">
+                  <h2 id="storyTitle">—</h2>
+                  <div class="metaLine" id="storyMeta">—</div>
+                </div>
+                <div class="meter">
+                  <label>Distorsão do sinal</label>
+                  <div class="bar"><i id="sanityBar"></i></div>
+                </div>
+              </div>
+
+              <div class="storyText" id="storyText"></div>
+
+              <div class="storyFoot">
+                <div>
+                  <span class="k">Atalhos:</span> Enter (próximo), Backspace (voltar), ESC (protocolo)
+                </div>
+                <div>
+                  <span class="k">Progresso:</span> <span id="progressText">0/7</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="emptyState" style="padding: 12px; color: var(--muted); font-size: 13px; line-height:1.7;">
+              <div style="border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:14px; background:rgba(0,0,0,.20);">
+                <div style="color:rgba(255,255,255,.85); letter-spacing:.5px; text-transform:uppercase; font-size:12px;">
+                  Aguardando seleção…
+                </div>
+                <p style="margin:10px 0 0; font-family: var(--serif);">
+                  Existem sete arquivos. Cada um deles foi recuperado de uma fonte diferente. Nenhum confirma o outro — e ainda assim,
+                  todos apontam para o mesmo lugar: um intervalo no mundo onde a realidade não consegue ficar inteira.
+                </p>
+                <p style="margin:10px 0 0; font-family: var(--serif);">
+                  Clique em um conto à esquerda.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      </div>
+
+      <div class="bottomNote">
+        “Algumas histórias não querem ser lidas. Elas querem ser lembradas.” — LOG sem autoria
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PROTOCOL -->
+  <div class="modal" id="modal">
+    <div class="modalCard">
+      <div class="modalHead">
+        <strong>PROTOCOLO DE LEITURA</strong>
+        <div class="x" id="closeModal">Fechar</div>
+      </div>
+      <div class="modalBody" id="modalBody">
+        —
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * SITE DE TERROR (FICÇÃO)
+     * - 7 contos (médio/longos)
+     * - typewriter + modo instantâneo
+     * - “sanidade” reduz com leitura e com efeitos
+     * - sussurros ocasionais na tela
+     * - áudio ambiente gerado por WebAudio (sem arquivo externo)
+     * - salva progresso no localStorage
+     */
+
+    const STORAGE_KEY = "arquivo_7contos_progress_v1";
+
+    const STORIES = [
+      {
+        id: "A-011",
+        title: "O Andar Entre os Andares",
+        tags: ["prédio", "rotina", "escada", "limiar"],
+        blurb: "Um edifício que ganhou um espaço onde nenhum elevador deveria parar.",
+        tone: "claustrofobia • repetição • limiar",
+        text:
+`Quando a portaria começou a trocar os números dos andares, ninguém reparou.
+
+Acontece aos poucos: primeiro o “12” vira “12A” na placa de metal; depois alguém escreve a caneta “13 (NÃO USAR)” no quadro de avisos; por fim, o elevador, que sempre foi um bicho obediente, passa a ter um pequeno atraso entre o bip e a arrancada, como se estivesse pensando.
+
+Eu moro no 14º, e minha rotina é tão repetida que eu poderia fazê-la dormindo: desço, pego as chaves do carro, volto, esqueço a carteira, desço de novo. Numa terça-feira chuvosa, eu percebi que o espelho do elevador estava… errado. Não sujo — errado.
+
+O reflexo demorava um instante a mais para acompanhar meu movimento. Uma diferença minúscula, do tamanho de um piscar de olhos. Só que, se você presta atenção em coisas pequenas, elas começam a crescer.
+
+No painel, havia um botão que não estava ali ontem.
+
+Não era um novo andar. Não era “T” ou “G”. Era um quadradinho sem número, vazio, como um espaço reservado. E alguém já tinha apertado: o LED vermelho parecia um grão de brasa.
+
+Eu deveria ter chamado o síndico. Eu deveria ter saído e subido pela escada.
+
+Mas a minha mão foi mais rápida do que minha prudência, e encostou no quadrado vazio.
+
+O elevador não subiu nem desceu.
+
+Ele soltou um suspiro. Não metálico. Um suspiro que parecia sair de trás do espelho.
+
+Então começou a descer.
+
+Passei pelo térreo, pelo subsolo, pelo segundo subsolo — e o painel não mostrava nada. O quadrado vazio ficou aceso. Nenhum número. Só o vermelho insistente, como se o elevador tivesse se esquecido de como contar.
+
+A luz piscou uma vez, e o som do cabo lá em cima pareceu… longe. Muito longe.
+
+Quando as portas abriram, eu não estava no estacionamento.
+
+Era um corredor de carpete úmido, com lâmpadas amareladas, e um cheiro de hotel velho. O tipo de corredor que existe na memória de quem já sonhou com lugares que não visitou.
+
+Eu ouvi passos.
+
+O elevador, atrás de mim, fechou as portas sozinho, e eu senti, pela primeira vez, uma coisa parecida com vergonha: eu estava onde não devia.
+
+A placa na parede dizia “14”.
+
+Olhei para trás: no painel do elevador, o quadrado vazio ainda estava aceso. E, abaixo do espelho, alguém tinha escrito com unha:
+
+“Você passou direto.”
+
+Eu caminhei pelo corredor com a sensação de estar andando em cima de um pensamento que não era meu. As portas dos apartamentos estavam alinhadas e silenciosas. Sem tapetes. Sem vasos. Sem vida. Só números.
+
+1401. 1402. 1403.
+
+No 1404, havia uma marca na madeira, como se alguém tivesse arrancado algo dali. Uma silhueta oval, do tamanho exato de um olho.
+
+Quando cheguei ao final do corredor, deveria haver uma escada de emergência.
+
+Havia outra porta de elevador.
+
+A mesma porta. O mesmo metal. O mesmo espelho atrasado.
+
+E ao lado dela, uma placa:
+
+“ENTRE OS ANDARES”.
+
+Eu ri uma risada pequena, sem humor. Aquele tipo de riso que você solta quando o mundo decide não ser sério. O quadrado vazio no painel me chamava como uma coceira. Eu apertei.
+
+As portas abriram para um lugar diferente.
+
+Um hall estreito, com uma janela no fundo. A chuva batia do lado de fora — mas parecia bater por dentro. A janela dava para uma vista impossível: eu via a fachada do meu prédio, mas de um ângulo que não existe, como se eu estivesse olhando por trás do concreto.
+
+E na janela, do outro lado do vidro, alguém me observava.
+
+Era eu.
+
+Só que meu reflexo não copiava meus movimentos. Ele já estava ali antes de eu olhar. Ele sorria de um jeito que eu não estava sorrindo. E, quando levantou a mão, não foi para acenar — foi para apontar, devagar, para o botão vazio no painel.
+
+Como se dissesse:
+
+“Desce mais.”
+
+Eu não desci.
+
+Eu apertei o térreo com força, várias vezes, como se a repetição pudesse convencer uma máquina a lembrar do mundo certo. O elevador tremeu, e a luz piscou, e eu senti o prédio inteiro respirar — como um pulmão enorme, indignado.
+
+As portas abriram no meu 14º andar real. Meu corredor real. Tapetes, vasos, cheiro de comida. Vida.
+
+Eu saí tão rápido que quase tropecei.
+
+No apartamento, eu fiquei horas sem coragem de olhar para o espelho do banheiro.
+
+Quando finalmente olhei, meu reflexo me acompanhou normalmente.
+
+Mas havia um detalhe.
+
+No canto inferior do espelho, como se alguém tivesse escrito com uma caneta finíssima, havia um quadrado desenhado.
+
+Vazio.
+
+E toda vez que eu passava perto do elevador no prédio, eu sentia ele me reconhecer.
+
+Como um animal preso que aprendeu o meu cheiro.
+
+O pior não foi saber que existe um lugar “entre os andares”.
+
+O pior foi perceber que eu tenho, dentro de mim, um botão vazio que quer apertar de novo.
+
+E que, algum dia, eu vou apertar.`
+      },
+      {
+        id: "B-204",
+        title: "O Arquivo que Lê Você",
+        tags: ["computador", "logs", "observação", "paranoia"],
+        blurb: "Você abre um arquivo. Ele abre você.",
+        tone: "paranoia • vigilância • espelho",
+        text:
+`Eu achei o arquivo numa pasta que não era minha.
+
+“C:\Users\Public\—\—\—\”.
+
+Sem nome de pasta, só traços. O Windows não reclamava. Como se sempre tivesse estado ali.
+
+O arquivo também não tinha nome. Era um .txt sem ícone, como um papel em branco com vergonha de existir.
+
+Quando eu cliquei, abriu no Bloco de Notas. Primeira linha:
+
+“VOCÊ VAI LER ATÉ O FIM.”
+
+Eu fechei. Ri. Abri de novo, porque eu sempre abro de novo. Era o tipo de provocação que você pensa que controla.
+
+As linhas seguintes não eram um conto. Eram registros. Timestamp, descrição, algo parecido com log de sistema, mas escrito com um jeito humano.
+
+14:02:11 — Você coçou o lado esquerdo do pescoço.  
+14:02:17 — Você olhou para a porta, sem motivo.  
+14:02:22 — Você pensou que isso era coincidência.
+
+Eu engoli seco.
+
+Eu tinha coçado o pescoço. Eu tinha olhado para a porta.
+
+Eu fechei a janela do arquivo e abri o gerenciador de tarefas. Nada estranho. CPU normal. Memória normal. Não havia programa “mágico” rodando.
+
+Quando voltei ao arquivo, uma nova linha havia aparecido.
+
+14:03:01 — Você procurou uma explicação que te fizesse continuar.
+
+Eu senti um calor subir pelo rosto, como se alguém tivesse me pegado mentindo.
+
+Eu tentei apagar o arquivo. Lixeira. Esvaziar.
+
+Ele voltou.
+
+Eu renomeei a pasta. Ele continuou.
+
+Eu tirei a internet. Ele continuou.
+
+Eu reiniciei o computador. Ele abriu sozinho, como uma notificação indesejada, e a tela piscou uma vez, como se alguém piscasse de dentro do monitor.
+
+Aí o arquivo mudou de tom.
+
+14:10:55 — Você lembra do armário da sua infância.  
+14:11:10 — Você pensa que nunca contou a ninguém.  
+14:11:40 — Você se engana.
+
+Eu não lembro do armário. Eu lembro do espaço escuro entre o armário e a parede, onde eu escondia coisas que eu não queria que ninguém visse. Não “coisas” no sentido de objetos. Coisas no sentido de pensamentos.
+
+O arquivo descreveu uma memória que eu não tinha escrito em lugar nenhum: a sensação de que, quando eu fechava a porta do armário, havia um intervalo de um segundo em que eu não sabia se eu tinha ficado do lado de fora ou do lado de dentro.
+
+Depois ele descreveu a minha mãe chamando meu nome na cozinha, e eu fingindo dormir, porque eu tinha medo de levantar e descobrir que o mundo tinha mudado.
+
+O arquivo não estava só observando meu corpo.
+
+Ele estava observando o meu medo.
+
+Eu fiquei com raiva.
+
+Eu comecei a digitar no arquivo:
+
+“QUEM É VOCÊ?”
+
+A resposta apareceu sozinha, como se eu tivesse apertado Enter sem tocar no teclado.
+
+“VOCÊ.”
+
+Eu parei, mãos no ar, como se o teclado fosse uma arma.
+
+O arquivo continuou:
+
+“EU SOU O SEU RESTO. O QUE SOBRA QUANDO VOCÊ FINGE.”
+
+E então, pela primeira vez, ele deu um comando.
+
+“VIRE O MONITOR PARA O LADO.”
+
+Eu não fiz.
+
+Ele escreveu:
+
+14:26:12 — Você não fez.  
+14:26:14 — Você vai fazer.
+
+Meu estômago virou.
+
+Eu virei o monitor um pouco, só o suficiente para que o reflexo na tela preta mostrasse meu rosto em sombra.
+
+Uma nova linha:
+
+“AGORA VOCÊ ESTÁ ME VENDO.”
+
+Eu desliguei o computador puxando o cabo da tomada. A tela apagou com um estalo.
+
+O arquivo não deveria existir sem energia.
+
+Mas meu celular vibrou na mesa, e na tela apareceu uma notificação:
+
+Sem remetente. Sem app.
+
+“VOCÊ ACHA QUE EU MORO AÍ?”
+
+Depois veio outra:
+
+“EU MORO ONDE VOCÊ ESCONDE COISAS.”
+
+Eu fui para o banheiro e abri o armário do espelho.
+
+O espaço atrás do espelho — aquele espaço estreito entre o concreto e o vidro — estava mais escuro do que deveria.
+
+E eu ouvi um som.
+
+Como unhas tocando papel.
+
+Eu fechei o armário do espelho devagar.
+
+No meu quarto, eu me deitei e tentei dormir, como se dormir fosse um firewall.
+
+Mas quando fechei os olhos, eu vi, no escuro, linhas brancas se formando.
+
+Como texto.
+
+E a última coisa que eu li antes do sono me pegar foi uma frase que não estava na minha cabeça:
+
+“VOCÊ VAI LER ATÉ O FIM.”
+
+No dia seguinte, eu acordei e o computador estava ligado.
+
+Na área de trabalho, um novo arquivo.
+
+Com o meu nome.
+
+E dentro dele, a primeira linha:
+
+“HOJE A GENTE COMEÇA A ESCREVER DE VOLTA.”`
+      },
+      {
+        id: "C-777",
+        title: "A Rádio que Não Toca Música",
+        tags: ["rádio", "sinal", "voz", "noite"],
+        blurb: "Uma estação que só fala quando ninguém deveria ouvir.",
+        tone: "sinal • madrugada • voz íntima",
+        text:
+`Eu sempre gostei de rádio, porque rádio é um fantasma aceito: uma voz sem corpo atravessando paredes.
+
+Na madrugada, eu deixo um radinho antigo ligado baixinho. Ajuda a dormir. Aquelas estáticas parecem chuva.
+
+Numa noite sem vento, o rádio achou uma frequência que não estava no dial.
+
+Ele não chiava. Não tocava música. Ele respirava.
+
+A voz entrou como se já estivesse no meio de uma conversa:
+
+“…não era para você ter mudado de rua.”
+
+Eu sentei na cama.
+
+A voz era masculina, mas sem idade. Não parecia locutor. Parecia alguém sentado do outro lado do quarto, falando baixo para não acordar ninguém.
+
+Eu girei o botão, tentando achar uma estação normal. A voz ficou mais clara.
+
+“Você sempre faz isso. Desvia no último segundo e chama de instinto.”
+
+Eu desliguei o rádio.
+
+O quarto ficou silencioso por meio segundo.
+
+Então a voz continuou, sem o rádio.
+
+“…e depois você finge que não sente culpa.”
+
+Eu acendi a luz. Nada. Só meu quarto, meus livros, minha janela.
+
+Eu ri, mas era um riso de defesa, desses que você usa para não aceitar que está com medo.
+
+Eu peguei o rádio de novo, liguei. Estática. Frequências normais. Música ruim.
+
+Eu relaxei.
+
+Aí, no meio de um anúncio, o som cortou como uma lâmina, e a voz voltou, mais próxima:
+
+“Se você quer que eu pare, abre a gaveta.”
+
+Meu corpo reagiu antes da minha mente. Eu olhei para a cômoda, para a gaveta de baixo.
+
+Eu não tinha motivo para abrir.
+
+A mão tremia.
+
+Eu abri.
+
+Dentro, havia um caderno que eu não reconheci. Capa preta, sem marca.
+
+Eu folheei. As páginas estavam preenchidas.
+
+Com a minha letra.
+
+Mas eu não lembrava de ter escrito.
+
+Frases curtas, como confissões:
+
+“Hoje eu pensei em ligar.”  
+“Hoje eu pensei em sumir.”  
+“Hoje eu senti que alguém me olhava da parede.”
+
+Eu nunca escrevi isso.
+
+A voz no rádio falou, como se estivesse lendo por cima do meu ombro:
+
+“Você guarda os pedaços em lugares que esquece. A gente só está devolvendo.”
+
+Eu fechei o caderno e o coloquei de volta. Fechei a gaveta com força.
+
+“Quem é você?”, eu perguntei, e minha voz soou pequena, como uma criança falando com o escuro.
+
+A resposta veio com um humor triste:
+
+“Eu sou a estação que você sintoniza quando acha que está sozinho.”
+
+O rádio começou a tocar um chiado que parecia… palavras mastigadas.
+
+Eu entendi, sem entender, que não era para eu ficar ali.
+
+A voz disse:
+
+“Vai para a sala. Não olha o corredor.”
+
+E aí veio o pior.
+
+Porque eu olhei.
+
+O corredor da minha casa estava normal, mas a luz do corredor tinha um atraso, como se o brilho chegasse um pouco depois. E no fim do corredor, no lugar onde fica o espelho, o espelho estava apagado, sem refletir nada.
+
+Como se a casa tivesse esquecido de me devolver.
+
+“Não olha”, a voz repetiu, agora mais urgente. “Você não vai gostar de ver o que sintonizou.”
+
+Eu fui para a sala, como um animal que obedece ao barulho de um predador.
+
+No sofá, eu sentei com o rádio no colo.
+
+A voz falou mais baixo:
+
+“Você não está doente. Você não está enlouquecendo. Você só abriu a frequência errada dentro de você.”
+
+Eu comecei a chorar sem perceber. Lágrima sem causa. O tipo de choro que não é tristeza — é descarga.
+
+A voz continuou, quase gentil:
+
+“Quando você ouvir estática, não chame de silêncio. Tem coisas que moram entre as faixas.”
+
+Eu dormi no sofá, com o rádio desligado e o caderno fechado na gaveta.
+
+No dia seguinte, eu acordei e o caderno sumiu.
+
+No rádio, as estações eram normais.
+
+Eu devia ter ficado aliviado.
+
+Mas à noite, quando o mundo fica quieto, eu começo a sentir o ar vibrando, bem de leve, como se o espaço quisesse falar.
+
+E, às vezes, eu ouço, dentro da minha própria cabeça, um chiado que forma palavras:
+
+“Você sabe como me achar.”`
+      },
+      {
+        id: "D-039",
+        title: "A Porta Pintada",
+        tags: ["casa", "infância", "parede", "convite"],
+        blurb: "Uma porta desenhada na parede que, um dia, decide abrir.",
+        tone: "infância • convite • perda de contorno",
+        text:
+`No quarto onde eu cresci, havia uma porta pintada na parede.
+
+Não era uma brincadeira minha. Era antiga. Minha mãe dizia que o antigo dono tinha uma filha e que a filha tinha “imaginação demais”.
+
+A porta era simples: contorno preto, maçaneta amarela, um “tapete” pintado. Se você olhasse rápido, seu cérebro completava o resto e acreditava que ali havia um corredor.
+
+Eu sempre evitava olhar muito tempo. Porque tinha uma sensação estranha: como se a porta estivesse esperando eu piscar.
+
+Quando eu tinha oito anos, eu coloquei a orelha no desenho e ouvi… nada.
+
+Quando eu tinha dez, eu ouvi um som que parecia tecido roçando.
+
+Quando eu tinha doze, eu ouvi uma respiração.
+
+Eu nunca contei para ninguém.
+
+Na adolescência, eu esqueci. O mundo ficou mais barulhento. A porta virou só uma marca feia numa parede.
+
+Anos depois, voltei para a casa para ajudar a limpar antes de vender. Minha mãe já tinha ido embora. A casa estava vazia, ecoando.
+
+No meu quarto antigo, a porta pintada ainda estava lá. Só que a tinta parecia mais escura, como se alguém tivesse retocado.
+
+Eu encostei a mão na maçaneta amarela desenhada.
+
+E senti frio.
+
+A parede não deveria estar fria. Parede costuma ter a temperatura da casa.
+
+Mas ali parecia um metal gelado, como se… por baixo da tinta, existisse uma maçaneta real.
+
+Eu puxei, rindo de nervoso.
+
+A tinta estalou.
+
+Um som seco de fissura.
+
+E a parede, por um segundo, cedeu, como uma pele que decide admitir que é pele.
+
+A porta abriu.
+
+Não como uma porta de verdade. Não houve dobradiça. Não houve giro.
+
+Foi como se o contorno desenhado tivesse se tornado uma fenda e, de repente, a fenda tivesse profundidade.
+
+Do outro lado, não havia corredor.
+
+Havia um quarto.
+
+Meu quarto.
+
+Só que arrumado demais. Limpo demais. Com cheiro de sabonete. Com uma luz que não vinha de lâmpada nenhuma — vinha do ar.
+
+Em cima da cama, um caderno preto.
+
+Eu lembrei da primeira vez que eu ouvi a respiração. Eu lembrei da sensação de que a porta esperava eu piscar.
+
+Eu devia fechar.
+
+Mas eu entrei.
+
+O chão do outro lado era macio, como carpete novo. Meus passos não faziam barulho. Cada coisa no quarto parecia uma versão “melhor” da minha memória: brinquedos sem poeira, livros sem rasgos, paredes sem manchas.
+
+No espelho do guarda-roupa, meu reflexo apareceu… com atraso.
+
+Eu senti um enjoo.
+
+Na mesa, o caderno estava aberto numa página. A letra não era minha, mas eu reconheci o conteúdo.
+
+Era a descrição exata de uma tarde que eu vivi ali quando criança: eu sentado no chão, montando um quebra-cabeça, e minha mãe chamando para jantar.
+
+Só que, no texto, havia uma linha que não aconteceu:
+
+“E então você olhou para a porta e pensou: se eu entrar, eu nunca mais vou precisar crescer.”
+
+Eu ouvi o som de tecido roçando.
+
+Atrás de mim, a porta (a fenda) ainda estava aberta.
+
+Na borda dela, como se estivesse segurando o contorno, havia dedos.
+
+Dedos finos, pálidos, com manchas de tinta.
+
+E uma voz, baixa, que parecia sair de dentro da parede:
+
+“Você demorou.”
+
+O quarto “perfeito” começou a mudar.
+
+As cores ficaram mais saturadas, como se a realidade estivesse tentando me seduzir. O ar ficou mais quente. O cheiro de sabonete virou um cheiro doce, enjoativo, de coisa estragando por baixo.
+
+O caderno virou uma página sozinho.
+
+Agora o texto dizia:
+
+“Ele entrou. Ele entrou de novo.”
+
+Eu corri para a fenda.
+
+Quando toquei a borda, senti algo vivo, úmido, como um músculo.
+
+A parede não devia ser assim.
+
+Eu puxei meu corpo para fora, tropeçando no meu próprio medo.
+
+Do lado de cá, meu quarto antigo estava igual: vazio, eco.
+
+Mas a porta pintada…
+
+A porta pintada agora estava fechada.
+
+E o contorno preto parecia mais grosso.
+
+Como se alguém tivesse passado caneta por cima para garantir que ela não abrisse de novo.
+
+Eu respirei aliviado por meio segundo.
+
+Até perceber um detalhe.
+
+No rodapé da porta pintada, bem embaixo do tapete desenhado, havia uma palavra que nunca esteve ali.
+
+Em letra de criança.
+
+“VOLTA.”
+
+Eu saí da casa naquele dia e nunca mais voltei.
+
+Mas às vezes, quando estou sozinho, eu sinto um vento frio encostando na minha nuca, e um barulho de tinta estalando no escuro.
+
+Como se alguma coisa, do outro lado, estivesse tentando aprender a abrir a minha parede.`
+      },
+      {
+        id: "E-515",
+        title: "O Culto da Luz Apagada",
+        tags: ["culto", "cidade", "ritual", "apagão"],
+        blurb: "Eles não veneram a escuridão. Veneram o momento em que você percebe que está sozinho nela.",
+        tone: "ritual • cidade • consentimento",
+        text:
+`O primeiro sinal foi o apagão que não fez barulho.
+
+Apagões fazem barulho: alguém xinga, um carro buzina, um gerador engasga. Esse não. As luzes só… desistiram. Como se a cidade tivesse fechado os olhos.
+
+Eu estava na rua, voltando do mercado, e de repente os postes apagaram em sequência, como um dominó silencioso.
+
+A escuridão não era total. Havia luzes de janelas, telas de celulares, faróis. Mas havia uma sensação de que a rua tinha ficado menor.
+
+Uma pessoa do outro lado da calçada levantou o celular para iluminar o caminho, e a tela ficou preta. Não desligou — ficou preta, como se algo tivesse passado a mão por cima.
+
+Eu achei que era coincidência, até ver outras telas apagarem ao mesmo tempo.
+
+E então eu ouvi palmas.
+
+Uma, duas, três, num ritmo lento.
+
+No fim da rua, na direção do parque, um grupo de pessoas caminhava em fila. Sem falar. Sem lanterna. Sem nada.
+
+Só palmas.
+
+A cada três palmas, alguém no grupo dizia uma frase:
+
+“Agora.”
+
+E a rua parecia ficar ainda mais escura por um segundo, como se “agora” fosse uma chave.
+
+Eu devia ter virado para casa. Mas, como todo mundo, eu tenho dentro de mim um pedaço que acha que pode olhar para o abismo e continuar sendo o mesmo.
+
+Eu segui, mantendo distância.
+
+Eles entraram no parque. O parque, de noite, já é um lugar de sombras. Mas naquele apagão, parecia um buraco.
+
+As palmas ecoavam.
+
+No meio do parque, onde há um coreto, eles pararam.
+
+E aí a cidade, ao redor, acendeu de novo. Os postes, as casas, tudo.
+
+Só o parque ficou apagado.
+
+Como se a energia tivesse decidido que aquele lugar não merecia.
+
+Uma mulher do grupo virou o rosto, e eu vi algo que me fez gelar: ela tinha tinta preta nos olhos, como se tivesse pintado as pálpebras por fora, e quando ela piscava, parecia que a escuridão piscava junto.
+
+Ela apontou para mim.
+
+Eu congelei. Eu pensei em correr.
+
+Mas as pessoas do grupo não correram atrás. Não gritaram. Não ameaçaram.
+
+Elas abriram espaço.
+
+Um convite.
+
+A mulher falou, em voz normal, como se estivesse chamando alguém para entrar numa sala:
+
+“Você está cansado de luz.”
+
+Eu devia ter respondido “não”.
+
+Mas as palavras que saíram foram:
+
+“Eu só… tô curioso.”
+
+Ela sorriu. E o sorriso dela não foi cruel. Foi… compreensivo. Como se ela entendesse a fome por dentro das pessoas.
+
+Ela falou:
+
+“Curiosidade é uma forma de oração.”
+
+As palmas recomeçaram, mais lentas.
+
+Uma, duas, três.
+
+“Agora.”
+
+Quando disseram “agora”, eu senti meu corpo ficar pesado, como se alguém tivesse aumentado a gravidade.
+
+Eles não me tocaram.
+
+Eu dei um passo, depois outro.
+
+Eu entrei no círculo.
+
+No centro do coreto, havia uma lâmpada apagada pendurada por um fio. Uma lâmpada comum, dessas de cozinha.
+
+Uma voz masculina, do fundo do grupo, disse:
+
+“Esta lâmpada já iluminou uma casa.”
+
+Outra voz respondeu:
+
+“E a casa já não existe.”
+
+Eu senti arrepios. Eu não sabia por quê.
+
+A mulher de olhos pretos falou comigo:
+
+“Você sabe o que é o momento mais escuro?”
+
+Eu pensei que era uma pergunta filosófica. Eu tentei ser esperto.
+
+“Meia-noite?”
+
+Ela balançou a cabeça.
+
+“O momento mais escuro é quando você percebe que ninguém vai acender a luz por você.”
+
+Ela tocou no fio da lâmpada e balançou. A lâmpada apagada fez um barulho pequeno.
+
+As palmas pararam.
+
+Todos ficaram em silêncio.
+
+E foi aí que eu entendi que aquilo era um culto, mas não um culto de deuses.
+
+Era um culto de sensação.
+
+Eles veneravam aquele segundo em que o coração se aperta e o cérebro procura uma saída.
+
+Uma pessoa do grupo estendeu a mão para mim, oferecendo um interruptor — um interruptor de parede, solto, com fios cortados.
+
+“Acende”, ele disse.
+
+“Mas não tem energia”, eu respondi.
+
+Ele sorriu, como se eu tivesse feito uma piada inocente.
+
+“Tem você.”
+
+Eu segurei o interruptor.
+
+Ele era gelado, e ao encostar nos meus dedos, eu senti um formigamento subir pelo braço.
+
+A mulher disse:
+
+“Diz ‘agora’.”
+
+Eu recusei.
+
+E aí, por um segundo, o parque ficou totalmente escuro. Não uma escuridão normal: uma escuridão com peso, com textura, como se estivesse colando na pele.
+
+Eu senti mãos, mas não me tocando — mãos no ar, perto. Uma presença coletiva.
+
+Eu senti o meu próprio medo virar uma coisa concreta, quase viscosa.
+
+A mulher falou, suave:
+
+“Você pode ir embora. A gente não prende ninguém.”
+
+E eu percebi que era verdade.
+
+O que prendia era outra coisa: a vontade de provar que eu não tinha medo.
+
+A vontade de pertencer.
+
+Eu queria sair. Eu queria ficar. Eu queria desligar meu cérebro.
+
+Eu disse:
+
+“Agora.”
+
+A lâmpada acendeu.
+
+Mas não com luz amarela.
+
+Acendeu com uma luz pálida, azulada, como a luz de um monitor. E, na luz, eu vi coisas que não estavam lá antes: rostos nas árvores, sombras se mexendo sem corpo, e um tipo de… sorriso na própria noite.
+
+Todos do grupo suspiraram, como se tivessem recebido um presente.
+
+A mulher apertou minha mão.
+
+“Bem-vindo”, ela disse.
+
+Eu larguei o interruptor e corri.
+
+O parque voltou a ser normal assim que eu saí do círculo. Os postes da rua ainda estavam acesos. Meu celular voltou a funcionar.
+
+Eu fui para casa tremendo, achando que eu tinha acabado de sobreviver a um teatro estranho.
+
+Mas, no meu quarto, quando apaguei a luz para dormir, eu ouvi palmas no ritmo certo.
+
+Uma, duas, três.
+
+E dentro de mim, uma voz calma disse:
+
+“Agora.”
+
+Eu acendi a luz.
+
+Ela não acendeu.
+
+E eu entendi o que o culto realmente queria.
+
+Eles não queriam me recrutar.
+
+Eles queriam deixar uma lâmpada apagada dentro de mim, para que eu nunca mais esquecesse como chamar a escuridão.`
+      },
+      {
+        id: "F-900",
+        title: "A Linha do Ônibus que Só Vai",
+        tags: ["ônibus", "rota", "no-return", "cidade"],
+        blurb: "Você entra achando que volta. Mas a rota não reconhece 'volta'.",
+        tone: "deslocamento • limiar • inevitável",
+        text:
+`Eu juro que era o ônibus de sempre.
+
+Linha 207. Mesmo ponto. Mesmo horário de fim de tarde. O mesmo letreiro piscando.
+
+Eu estava cansado, e eu não queria pensar.
+
+O ônibus chegou e, no reflexo da janela, eu vi minha cara cansada, e atrás de mim um senhor com uma sacola.
+
+Entramos. Pagamos. Sentamos.
+
+O cobrador não olhou para mim.
+
+Isso não seria estranho, se não fosse o jeito: ele não “não olhou” por distração. Ele não olhou como se eu não existisse.
+
+O motor ronronou, e o ônibus saiu.
+
+A cidade lá fora parecia normal por uns cinco minutos, até que eu percebi que os semáforos estavam todos verdes.
+
+Não mudavam.
+
+Um motorista de carro parou no cruzamento, confuso, e o ônibus passou por ele como se o carro fosse uma ideia.
+
+Eu olhei para trás: os outros passageiros estavam quietos demais.
+
+O senhor da sacola apertava a alça com força. Uma menina mexia no celular — a tela não acendia.
+
+Eu levantei e fui até a frente.
+
+“Moço, qual é a próxima parada?”, perguntei ao motorista.
+
+Ele não respondeu.
+
+No vidro de proteção, alguém tinha colado um papel amassado:
+
+“ESTA LINHA SÓ VAI.”
+
+Eu ri, nervoso.
+
+“Engraçado”, eu disse, e tentei puxar a cordinha de sinal.
+
+A campainha não tocou.
+
+O ônibus seguiu reto, atravessando ruas que eu conhecia até chegar numa avenida que eu não conhecia. E eu moro aqui a vida inteira.
+
+As placas começaram a ter nomes que pareciam quase certos, mas não eram:
+
+“Avenida do Retorno” (sem retorno).  
+“Rua do Lembrar” (sem memória).  
+“Praça da Volta” (sem volta).
+
+O senhor da sacola começou a chorar baixinho.
+
+Eu sentei de novo.
+
+Do lado de fora, os prédios ficaram mais baixos, depois mais altos, depois… indefinidos. Como se fossem rabiscos de um desenho que não decidiu o que quer ser.
+
+O céu, lá fora, estava numa cor que não existe em dia nenhum: um cinza com um toque de verde, como papel velho molhado.
+
+O cobrador levantou, finalmente, e falou com a voz mais normal do mundo:
+
+“Quem vai descer, desce na próxima.”
+
+“Mas como?”, alguém perguntou.
+
+Ele apontou para a porta.
+
+“É só descer.”
+
+A próxima parada tinha uma placa sem nome. Só um ponto final.
+
+O ônibus parou.
+
+A porta abriu.
+
+E, do lado de fora, havia… nada.
+
+Não no sentido de “escuro”. Nada no sentido de ausência de lugar. Um espaço sem textura, sem som, sem chão visível — mas, estranhamente, você tinha certeza de que pisaria em alguma coisa se saísse.
+
+A menina do celular levantou primeiro. Ela não chorava. Ela estava com a cara vazia de quem já aceitou.
+
+Ela desceu.
+
+E desapareceu, como um cursor sumindo da tela.
+
+O senhor da sacola levantou depois, tremendo. Olhou para mim como se pedisse permissão para desistir.
+
+Ele desceu.
+
+Sumiu.
+
+Eu não consegui.
+
+Eu fiquei sentado, segurando minha mochila como se fosse uma âncora.
+
+O cobrador olhou para mim pela primeira vez. Os olhos dele eram… fundos. Não no sentido de olheiras. Fundos como um túnel.
+
+Ele disse:
+
+“Tem gente que volta.”
+
+“Como?”, eu perguntei, minha voz quebrando.
+
+Ele deu de ombros.
+
+“Você tem um ‘volta’ bem forte dentro de você?”
+
+O ônibus arrancou de novo.
+
+A porta fechou.
+
+Eu senti um alívio horrível, porque eu tinha sido covarde e, ao mesmo tempo, eu não queria sumir.
+
+A cidade continuou se desfazendo.
+
+Em algum ponto, o ônibus atravessou uma ponte. Eu olhei pela janela e vi, lá embaixo, um rio que não era água.
+
+Era um movimento de sombras, como se o rio fosse feito de gente andando.
+
+O motorista finalmente falou, sem virar o rosto:
+
+“Você vai querer descer no final.”
+
+“Qual final?”, eu sussurrei.
+
+Ele respondeu:
+
+“O que te sobrar.”
+
+Eu senti um enjoo e fechei os olhos.
+
+Quando abri, o ônibus estava de volta a uma rua que eu conhecia.
+
+Semáforos funcionando. Carros comuns. Pessoas comuns.
+
+O letreiro dizia 207.
+
+Eu quase chorei de alívio.
+
+Eu puxei a cordinha.
+
+A campainha tocou.
+
+Eu desci na minha parada. O ar tinha cheiro normal. A realidade parecia firme.
+
+Eu fui para casa andando rápido, tremendo.
+
+No banheiro, eu lavei o rosto e olhei no espelho.
+
+Atrás de mim, no reflexo, eu vi por um segundo o interior do ônibus vazio, com a porta aberta para o nada.
+
+E uma voz, na minha cabeça, com o tom do cobrador, perguntou:
+
+“E aí? Você tem um ‘volta’ forte mesmo… ou só tem medo de ‘ir’?”
+
+Desde aquele dia, quando vejo o 207, eu atravesso a rua.
+
+Porque eu sei que ele me reconhece.
+
+E eu não confio mais na palavra “volta” quando vem de um lugar que não entende caminhos.`
+      },
+      {
+        id: "G-006",
+        title: "Sete Cartas no Fundo do Poço",
+        tags: ["cartas", "poço", "voz", "final"],
+        blurb: "Sete cartas que parecem falar com você… e talvez falem.",
+        tone: "confissão • eco • inevitável",
+        text:
+`O poço fica atrás de uma casa abandonada na beira da estrada.
+
+Eu não devia estar ali. Eu não tinha motivo. Eu só estava dirigindo sem destino, com a cabeça cheia, e vi a placa: “VENDE-SE”. A casa parecia me chamar com o silêncio dela.
+
+O portão estava aberto.
+
+O quintal tinha mato alto e um poço de pedra no meio, coberto por uma tampa de madeira podre.
+
+Eu levantei a tampa.
+
+O cheiro que subiu não era de mofo. Era de papel.
+
+Lá embaixo, eu vi uma corda amarrada em alguma coisa — como se alguém tivesse descido e deixado a corda por fora.
+
+Na borda do poço, havia um envelope.
+
+Sem selo. Sem remetente. Só meu nome escrito à mão.
+
+Meu nome.
+
+Eu olhei em volta, esperando uma câmera, uma pessoa, uma pegadinha.
+
+Nada.
+
+Eu abri o envelope.
+
+Dentro, uma carta dobrada em quatro.
+
+A letra era bonita, cuidadosa, e dizia:
+
+“Se você está lendo, é porque você abriu a tampa. Isso já é uma escolha.”
+
+Eu engoli seco.
+
+A carta continuava:
+
+“Existem sete cartas. Uma para cada coisa que você finge não sentir. Elas estão no fundo do poço. Você pode ir embora agora. Mas você não vai.”
+
+Eu ri. Um riso curto, sem graça.
+
+Eu olhei para baixo. Eu não via o fundo. Só escuro.
+
+A carta dizia:
+
+“Você não precisa descer o corpo. Você só precisa descer a atenção. Leia aqui, no alto. O poço sobe o que quer ser lido.”
+
+Eu senti um vento frio sair do poço, como um suspiro.
+
+E então, na borda, surgiu outro envelope.
+
+Eu juro: não estava ali antes.
+
+Outro envelope com meu nome.
+
+Eu peguei com cuidado, como se fosse um bicho.
+
+A segunda carta dizia:
+
+“Você se acha forte porque aguenta. Mas aguentar não é força. É costume.”
+
+Eu me sentei no chão, de costas para o poço, porque eu não queria sentir o vento no rosto.
+
+A terceira carta apareceu ao meu lado, sem som, como uma folha caindo.
+
+“Você acha que ninguém percebe quando você some por dentro. Mas quem te ama percebe. E quem não te ama também.”
+
+Eu senti o peito apertar.
+
+A quarta:
+
+“Você se culpa por coisas que nem lembra. Isso não é moral. É um fio que alguém amarrou em você por trás.”
+
+A quinta:
+
+“Você chama de ‘paz’ o que é só ausência de barulho. Paz de verdade faz som. Faz presença. Você não sabe reconhecer.”
+
+Eu me levantei.
+
+“Chega”, eu disse em voz alta, como se o poço pudesse ouvir. E eu sabia que podia.
+
+O vento do poço ficou mais forte.
+
+A sexta carta veio com uma frase só:
+
+“Olha.”
+
+Eu virei devagar.
+
+No poço, no escuro, eu vi um brilho — não no fundo, mas no meio, como se o poço tivesse profundidade suficiente para ter um “meio” habitado.
+
+E no brilho, um rosto.
+
+Não era um rosto estranho.
+
+Era o meu.
+
+Mas não o meu rosto agora.
+
+O meu rosto num dia em que eu estava cansado, num dia em que eu quis desistir, num dia em que eu engoli coisas que não devia engolir.
+
+O rosto no poço não me olhava com ódio.
+
+Me olhava com uma espécie de cansaço antigo.
+
+A sétima carta surgiu na minha mão como se já estivesse lá desde sempre.
+
+“Se você quiser fechar a tampa, fecha. Mas sabe qual é o problema de poços? Eles continuam sendo poços por baixo da tampa.”
+
+Eu tremia.
+
+Eu li a assinatura no fim.
+
+Não era um nome.
+
+Era uma data. Uma data que ainda não tinha acontecido.
+
+Eu ouvi, do poço, uma voz que não era som — era entendimento.
+
+“Você veio aqui para se assustar. Mas o susto não é o poço.”
+
+Eu dei um passo para trás.
+
+A voz continuou:
+
+“O susto é perceber que você sempre teve um poço. E que agora você sabe onde fica.”
+
+Eu corri para o carro.
+
+No caminho de volta, eu tentei me convencer de que era uma alucinação, um teatro, uma pegadinha.
+
+Mas quando cheguei em casa, no meu bolso, eu encontrei um envelope.
+
+Sem selo. Sem remetente.
+
+Só uma frase:
+
+“Guarda a tampa. A gente vai precisar dela.”`
+      }
+    ];
+
+    /* ===== UI elements ===== */
+    const listEl = document.getElementById("list");
+    const searchEl = document.getElementById("search");
+
+    const storyCard = document.getElementById("storyCard");
+    const emptyState = document.getElementById("emptyState");
+
+    const viewCode = document.getElementById("viewCode");
+    const viewSub = document.getElementById("viewSub");
+
+    const storyTitle = document.getElementById("storyTitle");
+    const storyMeta = document.getElementById("storyMeta");
+    const storyText = document.getElementById("storyText");
+
+    const progressText = document.getElementById("progressText");
+    const sanityText = document.getElementById("sanityText");
+    const sanityBar = document.getElementById("sanityBar");
+
+    const whisperEl = document.getElementById("whisper");
+
+    const modal = document.getElementById("modal");
+    const modalBody = document.getElementById("modalBody");
+    const closeModal = document.getElementById("closeModal");
+
+    const btnProtocol = document.getElementById("btnProtocol");
+    const btnInstant = document.getElementById("btnInstant");
+    const btnReset = document.getElementById("btnReset");
+    const audioBtn = document.getElementById("audioBtn");
+
+    const app = document.getElementById("app");
+
+    /* ===== State ===== */
+    let state = loadState();
+    let activeId = state.activeId || null;
+    let instantMode = !!state.instantMode;
+    let audioOn = false;
+
+    // sanity goes down as they read more
+    let sanity = clampNumber(state.sanity ?? 100, 0, 100);
+
+    // typing
+    let typingTimer = null;
+    let typingIndex = 0;
+    let typingText = "";
+    let typingDone = true;
+
+    // Audio engine (WebAudio) — no external files
+    let audioCtx = null;
+    let audioNodes = null;
+
+    init();
+
+    function init(){
+      renderList();
+      updateProgress();
+      applySanity();
+
+      if(activeId){
+        openStory(activeId, {silent:true});
+      }
+
+      searchEl.addEventListener("input", () => renderList(searchEl.value.trim()));
+      btnProtocol.addEventListener("click", () => openProtocol());
+      closeModal.addEventListener("click", () => closeProtocol());
+      modal.addEventListener("click", (e) => { if(e.target === modal) closeProtocol(); });
+
+      btnInstant.addEventListener("click", () => {
+        instantMode = !instantMode;
+        btnInstant.textContent = instantMode ? "Typewriter" : "Mostrar tudo";
+        state.instantMode = instantMode;
+        saveState();
+        if(activeId) openStory(activeId, {restart:true});
+        whisper(instantMode ? "Modo instantâneo ativado." : "Modo typewriter ativado.");
+      });
+
+      btnReset.addEventListener("click", () => {
+        if(confirm("Resetar progresso local? (isso apaga lidos/sanidade/seleção)")){
+          localStorage.removeItem(STORAGE_KEY);
+          location.reload();
+        }
+      });
+
+      audioBtn.addEventListener("click", async () => {
+        audioOn = !audioOn;
+        audioBtn.textContent = audioOn ? "ON" : "OFF";
+        if(audioOn){
+          await startAudio();
+          whisper("…escutou? Não é silêncio.");
+        } else {
+          stopAudio();
+          whisper("O silêncio não é vazio.");
+        }
+      });
+
+      // keyboard shortcuts
+      window.addEventListener("keydown", (e) => {
+        if(e.key === "Escape"){
+          openProtocol();
+          return;
+        }
+
+        if(!activeId) return;
+
+        if(e.key === "Enter"){
+          // next story
+          e.preventDefault();
+          jumpStory(+1);
+        } else if(e.key === "Backspace"){
+          // prev story
+          e.preventDefault();
+          jumpStory(-1);
+        }
+      });
+
+      // periodic whispers
+      setInterval(() => {
+        if(Math.random() < 0.28){
+          whisper(randomWhisper());
+          // sanity wobble
+          if(activeId){
+            sanity = clampNumber(sanity - randFloat(0.1, 0.6), 0, 100);
+            persistSanity();
+          }
+        }
+      }, 9000);
+
+      // subtle “glitch” on focus changes
+      window.addEventListener("blur", () => {
+        if(activeId){
+          whisper("Você saiu… e voltou.");
+          sanity = clampNumber(sanity - 0.8, 0, 100);
+          persistSanity();
+        }
+      });
+
+      // keep UI correct for button label
+      btnInstant.textContent = instantMode ? "Typewriter" : "Mostrar tudo";
+    }
+
+    function renderList(filter=""){
+      listEl.innerHTML = "";
+
+      const q = filter.toLowerCase();
+      const filtered = STORIES.filter(s => {
+        const hay = (s.id + " " + s.title + " " + s.tags.join(" ") + " " + s.tone + " " + s.blurb).toLowerCase();
+        return hay.includes(q);
+      });
+
+      filtered.forEach((s) => {
+        const el = document.createElement("div");
+        el.className = "item" + (s.id === activeId ? " active" : "");
+        el.innerHTML = `
+          <div class="meta">
+            <div class="code">${escapeHtml(s.id)} • ${escapeHtml(s.tone)}</div>
+            <div class="name">${escapeHtml(s.title)}</div>
+            <div class="tag">${escapeHtml(s.blurb)}</div>
+          </div>
+          <div class="chev">⟶</div>
+        `;
+        el.addEventListener("click", () => openStory(s.id));
+        listEl.appendChild(el);
+      });
+
+      if(filtered.length === 0){
+        const empty = document.createElement("div");
+        empty.style.padding = "14px";
+        empty.style.color = "var(--muted)";
+        empty.style.fontSize = "12px";
+        empty.textContent = "Nada encontrado. (Isso não significa que você está seguro.)";
+        listEl.appendChild(empty);
+      }
+    }
+
+    function openStory(id, opts={}){
+      const s = STORIES.find(x => x.id === id);
+      if(!s) return;
+
+      activeId = id;
+      state.activeId = activeId;
+      saveState();
+
+      // mark read
+      if(!state.read) state.read = {};
+      if(!state.read[id]) state.read[id] = { openedAt: Date.now(), completed: false };
+
+      // UI
+      renderList(searchEl.value.trim());
+
+      emptyState.style.display = "none";
+      storyCard.style.display = "block";
+
+      viewCode.textContent = `ARQUIVO ${s.id}`;
+      viewSub.textContent = `${s.tone} • tags: ${s.tags.join(", ")}`;
+
+      storyTitle.textContent = s.title;
+      storyMeta.textContent = `Fonte: RECUPERADO • Integridade: 78% • Sinal: instável • Nota: ${s.blurb}`;
+
+      // typing
+      if(opts.restart || !opts.silent){
+        startStoryTyping(s.text);
+      } else {
+        // silent load, keep mode
+        if(instantMode){
+          storyText.textContent = s.text;
+          typingDone = true;
+        } else {
+          startStoryTyping(s.text, {silent:true});
+        }
+      }
+
+      // sanity impact on open
+      sanity = clampNumber(sanity - 0.7, 0, 100);
+      persistSanity();
+
+      whisper(`Arquivo ${s.id} aberto.`);
+      updateProgress();
+    }
+
+    function startStoryTyping(text, options={}){
+      stopTyping();
+
+      typingText = text;
+      typingIndex = 0;
+      typingDone = false;
+
+      if(instantMode){
+        storyText.textContent = text;
+        typingDone = true;
+        markCompleted(activeId);
+        updateProgress();
+        return;
+      }
+
+      storyText.textContent = "";
+      const cursor = document.createElement("span");
+      cursor.className = "cursor";
+
+      const speedBase = 10; // lower = faster
+      const speed = Math.max(8, speedBase + Math.floor((100 - sanity) / 10)); // slower when sanity low
+
+      typingTimer = setInterval(() => {
+        const chunk = 2 + Math.floor(Math.random() * 2);
+        typingIndex += chunk;
+
+        const sliced = typingText.slice(0, typingIndex);
+        storyText.textContent = sliced;
+        storyText.appendChild(cursor);
+
+        // tiny sanity drain while reading
+        if(Math.random() < 0.25){
+          sanity = clampNumber(sanity - 0.08, 0, 100);
+          persistSanity({quiet:true});
+        }
+
+        if(typingIndex >= typingText.length){
+          stopTyping();
+          typingDone = true;
+          // remove cursor
+          storyText.textContent = typingText;
+          markCompleted(activeId);
+          updateProgress();
+          whisper("…fim do arquivo.");
+          // post-finish effect
+          sanity = clampNumber(sanity - 1.2, 0, 100);
+          persistSanity();
+        }
+      }, speed);
+    }
+
+    function stopTyping(){
+      if(typingTimer){
+        clearInterval(typingTimer);
+        typingTimer = null;
+      }
+    }
+
+    function markCompleted(id){
+      if(!id) return;
+      if(!state.read) state.read = {};
+      if(!state.read[id]) state.read[id] = { openedAt: Date.now(), completed: false };
+      state.read[id].completed = true;
+      state.read[id].completedAt = Date.now();
+      saveState();
+    }
+
+    function updateProgress(){
+      const read = state.read || {};
+      const completedCount = Object.values(read).filter(x => x && x.completed).length;
+      progressText.textContent = `${completedCount}/7`;
+    }
+
+    function jumpStory(dir){
+      const idx = STORIES.findIndex(s => s.id === activeId);
+      if(idx < 0) return;
+      const next = STORIES[idx + dir];
+      if(next) openStory(next.id, {restart:true});
+      else whisper(dir > 0 ? "Não há próximo arquivo." : "Não há arquivo anterior.");
+    }
+
+    function applySanity(){
+      sanityText.textContent = `${Math.round(sanity)}%`;
+      document.documentElement.style.setProperty("--sanity", String(sanity));
+      sanityBar.style.width = `${sanity}%`;
+
+      // more distortion at low sanity
+      document.documentElement.style.setProperty("--scanOpacity", sanity < 50 ? ".20" : ".16");
+      document.documentElement.style.setProperty("--grainOpacity", sanity < 50 ? ".26" : ".20");
+
+      // subtle color shift at low sanity
+      if(sanity < 35){
+        app.style.transform = "translateZ(0) skewX(0.05deg)";
+      } else {
+        app.style.transform = "translateZ(0)";
+      }
+    }
+
+    function persistSanity(options={}){
+      state.sanity = sanity;
+      saveState();
+      if(!options.quiet) applySanity();
+      else {
+        // still update UI occasionally
+        if(Math.random() < 0.3) applySanity();
+      }
+    }
+
+    function openProtocol(){
+      modalBody.textContent =
+`1) Isto é ficção. Se estiver desconfortável, feche. Não prove nada para ninguém.
+2) Se o áudio estiver ON, ele usa som gerado pelo navegador (sem músicas externas).
+3) “Sanidade” é um efeito do site: quanto mais você lê, mais o visual distorce.
+4) Progresso fica salvo só no seu navegador (localStorage).
+5) Atalhos:
+   - Enter: próximo conto
+   - Backspace: conto anterior
+   - ESC: abrir/fechar protocolo
+
+E lembre:
+Você pode ir embora a qualquer momento.
+Mas histórias, às vezes, vêm junto.`;
+      modal.classList.add("open");
+    }
+    function closeProtocol(){
+      modal.classList.remove("open");
+    }
+
+    function whisper(msg){
+      whisperEl.textContent = msg;
+      whisperEl.classList.remove("show");
+      // force reflow
+      void whisperEl.offsetWidth;
+      whisperEl.classList.add("show");
+    }
+
+    function randomWhisper(){
+      const pool = [
+        "Não confia no silêncio. Ele também fala.",
+        "Você leu rápido demais. Como se quisesse passar por cima.",
+        "A luz do seu quarto não está tão firme quanto você acha.",
+        "Você pensa que está sozinho… e isso é quase engraçado.",
+        "Algumas frases querem ser repetidas. Outras, evitadas.",
+        "Você percebeu? O arquivo não está contando só histórias.",
+        "Não é medo. É reconhecimento."
+      ];
+      return pool[Math.floor(Math.random()*pool.length)];
+    }
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return {};
+        return JSON.parse(raw) || {};
+      }catch{
+        return {};
+      }
+    }
+    function saveState(){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }catch{}
+    }
+
+    function clampNumber(n, min, max){
+      return Math.min(max, Math.max(min, Number(n)));
+    }
+    function randFloat(a,b){
+      return a + Math.random()*(b-a);
+    }
+    function escapeHtml(str){
+      return String(str).replace(/[&<>"']/g, s => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[s]));
+    }
+
+    /* ===== Audio (WebAudio) =====
+       Gera ambiente “tenebroso” sem arquivos externos:
+       - ruído (pink-ish) + filtro
+       - drone baixo (sine) + tremolo
+       - pequenos “ticks” aleatórios
+    */
+    async function startAudio(){
+      try{
+        if(!audioCtx){
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if(audioCtx.state === "suspended"){
+          await audioCtx.resume();
+        }
+        if(audioNodes){
+          return;
+        }
+
+        const master = audioCtx.createGain();
+        master.gain.value = 0.06;
+
+        // noise buffer
+        const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < data.length; i++) {
+          // simple pink-ish filter
+          const white = Math.random() * 2 - 1;
+          lastOut = (lastOut + (0.02 * white)) / 1.02;
+          data[i] = lastOut * 2.2;
+        }
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+
+        const noiseFilter = audioCtx.createBiquadFilter();
+        noiseFilter.type = "lowpass";
+        noiseFilter.frequency.value = 900;
+        noiseFilter.Q.value = 0.7;
+
+        const noiseGain = audioCtx.createGain();
+        noiseGain.gain.value = 0.50;
+
+        // drone
+        const osc = audioCtx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = 52; // low A-ish
+
+        const trem = audioCtx.createOscillator();
+        trem.type = "sine";
+        trem.frequency.value = 0.12;
+
+        const tremGain = audioCtx.createGain();
+        tremGain.gain.value = 0.35;
+
+        const droneGain = audioCtx.createGain();
+        droneGain.gain.value = 0.55;
+
+        trem.connect(tremGain);
+        tremGain.connect(droneGain.gain);
+
+        const droneFilter = audioCtx.createBiquadFilter();
+        droneFilter.type = "bandpass";
+        droneFilter.frequency.value = 140;
+        droneFilter.Q.value = 0.9;
+
+        // random ticks
+        const tickGain = audioCtx.createGain();
+        tickGain.gain.value = 0.0;
+
+        const tickOsc = audioCtx.createOscillator();
+        tickOsc.type = "triangle";
+        tickOsc.frequency.value = 1200;
+
+        const tickFilter = audioCtx.createBiquadFilter();
+        tickFilter.type = "highpass";
+        tickFilter.frequency.value = 800;
+
+        // route
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(master);
+
+        osc.connect(droneFilter);
+        droneFilter.connect(droneGain);
+        droneGain.connect(master);
+
+        tickOsc.connect(tickFilter);
+        tickFilter.connect(tickGain);
+        tickGain.connect(master);
+
+        master.connect(audioCtx.destination);
+
+        noise.start();
+        osc.start();
+        trem.start();
+        tickOsc.start();
+
+        audioNodes = { master, noise, osc, trem, tickOsc, tickGain, noiseFilter, droneFilter };
+
+        // tick scheduler
+        const tickLoop = () => {
+          if(!audioNodes) return;
+          // more ticks when sanity low
+          const rate = sanity < 45 ? 0.55 : 0.28;
+          if(Math.random() < rate){
+            const now = audioCtx.currentTime;
+            audioNodes.tickGain.gain.cancelScheduledValues(now);
+            audioNodes.tickGain.gain.setValueAtTime(0.0, now);
+            audioNodes.tickGain.gain.linearRampToValueAtTime(0.12, now + 0.01);
+            audioNodes.tickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          }
+
+          // slight drift
+          audioNodes.osc.frequency.value = 48 + Math.random() * 10;
+          audioNodes.noiseFilter.frequency.value = 700 + Math.random() * 500;
+
+          setTimeout(tickLoop, 800 + Math.random()*900);
+        };
+        tickLoop();
+
+      }catch(e){
+        whisper("Áudio indisponível neste navegador.");
+        audioOn = false;
+        audioBtn.textContent = "OFF";
+      }
+    }
+
+    function stopAudio(){
+      try{
+        if(!audioNodes) return;
+        const { master, noise, osc, trem, tickOsc } = audioNodes;
+        master.gain.value = 0.0;
+
+        noise.stop();
+        osc.stop();
+        trem.stop();
+        tickOsc.stop();
+
+        audioNodes = null;
+      }catch{}
+    }
+  </script>
+</body>
+</html>
